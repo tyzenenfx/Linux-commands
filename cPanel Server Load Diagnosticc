@@ -1,0 +1,90 @@
+#!/bin/bash
+
+echo "=============================================="
+echo "      cPanel Server Load Diagnostic Tool      "
+echo "=============================================="
+echo ""
+
+DATE=$(date)
+HOSTNAME=$(hostname)
+
+echo "Date: $DATE"
+echo "Hostname: $HOSTNAME"
+echo ""
+
+# Load Average
+echo "----- Load Average -----"
+uptime
+echo ""
+
+# CPU Usage
+echo "----- Top CPU Processes -----"
+ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%cpu | head -10
+echo ""
+
+# Memory Usage
+echo "----- Memory Usage -----"
+free -m
+echo ""
+
+# IOWait Check
+echo "----- CPU IOWait -----"
+top -bn1 | grep "Cpu(s)"
+echo ""
+
+# Disk Usage
+echo "----- Disk Usage -----"
+df -h
+echo ""
+
+# Disk IO
+echo "----- Disk I/O (iostat) -----"
+if command -v iostat &> /dev/null
+then
+    iostat -x 1 1
+else
+    echo "iostat not installed"
+fi
+echo ""
+
+# MySQL Process Check
+echo "----- MySQL Process List -----"
+mysqladmin processlist 2>/dev/null | head -20
+echo ""
+
+# Apache Status
+echo "----- Apache Process Count -----"
+ps aux | grep httpd | grep -v grep | wc -l
+echo ""
+
+# LiteSpeed Check (if installed)
+if pgrep litespeed >/dev/null
+then
+    echo "LiteSpeed is running"
+    ps aux | grep litespeed | grep -v grep | wc -l
+fi
+echo ""
+
+# PHP-FPM max_children Errors (Plesk/cPanel mixed environment safe check)
+echo "----- PHP-FPM max_children Errors -----"
+if ls /var/log/plesk-php*-fpm/error.log 1> /dev/null 2>&1
+then
+    grep max_children /var/log/plesk-php*-fpm/error.log | tail
+else
+    echo "No Plesk PHP-FPM logs found"
+fi
+echo ""
+
+# Logged-in Users
+echo "----- Logged-in Users -----"
+who
+echo ""
+
+# Top Memory Processes
+echo "----- Top Memory Processes -----"
+ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -10
+echo ""
+
+echo "=============================================="
+echo "            Check Completed                   "
+echo "=============================================="
